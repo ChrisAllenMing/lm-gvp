@@ -80,7 +80,7 @@ def load_GO_labels(task="cc"):
     prot2annot, goterms, gonames, counts = load_GO_annot(
         os.path.join(
             DATA_ROOT_DIR,
-            "DeepFRI_GO_PDB/data/nrPDB-GO_2019.06.18_annot.tsv",
+            "GeneOntology/nrPDB-GO_annot.tsv",
         )
     )
     goterms = goterms[task]
