@@ -31,6 +31,7 @@ conda install -c anaconda pytables
 conda install -c anaconda h5py
 
 pip install captum==0.4.0
+pip install freesasa
 pip install atom3d
 ```
 
