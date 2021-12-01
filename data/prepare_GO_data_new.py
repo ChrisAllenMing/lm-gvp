@@ -27,7 +27,7 @@ from contact_map_utils import (
 
 # DATA_DIR = "/home/ec2-user/SageMaker/efs/paper_data/DeepFRI_GO_PDB"
 # DATA_DIR = "./GeneOntology"
-DATA_DIR = "./data/GeneOntology"
+DATA_DIR = "./dataset/GeneOntology"
 
 # OUTPUT_DIR = "/home/ec2-user/SageMaker/efs/gvp-datasets/DeepFRI_GO"
 OUTPUT_DIR = DATA_DIR

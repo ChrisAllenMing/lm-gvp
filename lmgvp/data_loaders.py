@@ -18,11 +18,12 @@ from lmgvp.datasets import (
 )
 from lmgvp.deepfrier_utils import load_GO_annot
 
-DATA_ROOT_DIR = "/home/ec2-user/SageMaker/efs"
+# DATA_ROOT_DIR = "/home/ec2-user/SageMaker/efs"
+DATA_ROOT_DIR = "./dataset/"
 
 
 def load_gvp_data(
-    gvp_data_dir="{}/gvp-datasets".format(DATA_ROOT_DIR),
+    gvp_data_dir=DATA_ROOT_DIR,
     task="protease/with_tags",
     split="train",
     seq_only=False,
@@ -143,7 +144,7 @@ def get_dataset(task="", model_type="", split="train"):
         prot2annot, num_outputs, pos_weights = load_GO_labels(task)
         # load features
         dataset = load_gvp_data(
-            task="DeepFRI_GO", split=split, seq_only=seq_only
+            task="GeneOntology", split=split, seq_only=seq_only
         )
         add_GO_labels(dataset, prot2annot, go_ont=task)
     else:

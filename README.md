@@ -12,6 +12,28 @@ To install all dependencies run:
 $ pip install -r requirements.txt
 ```
 
+Install TorchProtein on Arnold:
+```
+conda create -n lmgvp python=3.6
+source activate lmgvp
+
+conda install biopython
+conda install -c conda-forge pytorch-lightning
+conda install -y -c pytorch pytorch=1.8.1 torchvision
+conda install pytorch-scatter -c pyg
+conda install pytorch-cluster -c pyg
+conda install pytorch-sparse -c pyg 
+conda install pyg -c pyg -c conda-forge
+conda install -c conda-forge matplotlib
+conda install -c conda-forge transformers
+conda install tqdm
+conda install -c anaconda pytables
+conda install -c anaconda h5py
+
+pip install captum==0.4.0
+pip install atom3d
+```
+
 ## Training
 
 Training of LM-GVP and competitive models for protein property predictions can be done in `train.py`, which utilizes the [PyTorch Lightning Trainer](https://pytorch-lightning.readthedocs.io/en/latest/common/trainer.html#). All of the [trainer flags](https://pytorch-lightning.readthedocs.io/en/latest/common/trainer.html#trainer-flags) in PyTorch Lightning are supported. To see the usage, run: 
