@@ -58,6 +58,7 @@ IS_CLASSIFY = {
     "cc": True,
     "mf": True,
     "bp": True,
+    "ec": True,
 }
 
 
@@ -145,7 +146,7 @@ def evaluate(model, data_loader, task):
     y_preds = torch.vstack(y_preds).numpy()
     y_true = torch.vstack(y_true).numpy()
     print(y_preds.shape, y_true.shape)
-    if task in ("cc", "bp", "mf"):
+    if task in ("cc", "bp", "mf", "ec"):
         # multi-label classification
         f_max, micro_aupr = deepfrier_utils.evaluate_multilabel(
             y_true.numpy(), y_preds.numpy()
@@ -289,7 +290,7 @@ if __name__ == "__main__":
     # dataset params
     parser.add_argument(
         "--task",
-        help="Task to perform: ['flu', 'protease', 'cc', 'bp', 'mf']",
+        help="Task to perform: ['flu', 'protease', 'cc', 'bp', 'mf', 'ec']",
         type=str,
         required=True,
     )

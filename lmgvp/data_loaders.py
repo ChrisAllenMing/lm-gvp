@@ -16,7 +16,7 @@ from lmgvp.datasets import (
     ProteinGraphDatasetWithTarget,
     BertProteinGraphDatasetWithTarget,
 )
-from lmgvp.deepfrier_utils import load_GO_annot
+from lmgvp.deepfrier_utils import load_GO_annot, load_EC_annot
 
 # DATA_ROOT_DIR = "/home/ec2-user/SageMaker/efs"
 DATA_ROOT_DIR = "./dataset/"
@@ -97,6 +97,34 @@ def load_GO_labels(task="cc"):
     return prot2annot, num_outputs, pos_weights
 
 
+def load_EC_labels(task="ec"):
+    """Load the labels in the EC dataset
+
+    Args:
+        task: String. GO task. One of: 'ec'
+
+    Return:
+        Tuple where the first element is a dictionary mapping proteins to their target, second element is an integer with the number of outputs of the task and the third element is a matrix with the weight of each target.
+    """
+    prot2annot, ecnumbers, counts = load_EC_annot(
+        os.path.join(
+            DATA_ROOT_DIR,
+            "EnzymeCommission/nrPDB-EC_annot.tsv",
+        )
+    )
+    ecnumbers = ecnumbers[task]
+    num_outputs = len(ecnumbers)
+
+    # computing weights for imbalanced ec classes
+    class_sizes = counts[task]
+    mean_class_size = np.mean(class_sizes)
+    pos_weights = mean_class_size / class_sizes
+    pos_weights = np.maximum(1.0, np.minimum(10.0, pos_weights))
+    # to tensor
+    pos_weights = torch.from_numpy(pos_weights.astype(np.float32))
+    return prot2annot, num_outputs, pos_weights
+
+
 def add_GO_labels(dataset, prot2annot, go_ont="cc"):
     """
     Add GO labels to a dataset
@@ -117,11 +145,31 @@ def add_GO_labels(dataset, prot2annot, go_ont="cc"):
     return dataset
 
 
+def add_EC_labels(dataset, prot2annot, ecname="ec"):
+    """
+    Add EC labels to a dataset
+
+    Args:
+        dataset: list of dict (output from `load_gvp_data`)
+        prot2annot: output from `load_EC_labels`
+        ecname: String. Task to be used. One of: 'ec'
+
+    Return:
+        Dataset formatted as a list. Where, for each element (dictionary), a `target` field has been added.
+
+    """
+    for rec in dataset:
+        rec["target"] = torch.from_numpy(
+            prot2annot[rec["name"]][ecname].astype(np.float32)
+        )
+    return dataset
+
+
 def get_dataset(task="", model_type="", split="train"):
     """Load data from files, then transform into appropriate
     Dataset objects.
     Args:
-        task: one of ['cc', 'bp', 'mf', 'protease', 'flu']
+        task: one of ['cc', 'bp', 'mf', 'protease', 'flu', 'ec']
         model_type: one of ['seq', 'struct', 'seq_struct']
         split: one of ['train', 'valid', 'test']
 
@@ -147,6 +195,14 @@ def get_dataset(task="", model_type="", split="train"):
             task="GeneOntology", split=split, seq_only=seq_only
         )
         add_GO_labels(dataset, prot2annot, go_ont=task)
+    elif task == "ec":
+        # load labels
+        prot2annot, num_outputs, pos_weights = load_EC_labels(task)
+        # load features
+        dataset = load_gvp_data(
+            task="EnzymeCommission", split=split, seq_only=seq_only
+        )
+        add_EC_labels(dataset, prot2annot, ecname=task)
     else:
         data_dir = {"protease": "protease/with_tags", "flu": "Fluorescence"}
         dataset = load_gvp_data(

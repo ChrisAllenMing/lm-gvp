@@ -89,6 +89,47 @@ def load_GO_annot(filename):
     return prot2annot, goterms, gonames, counts
 
 
+def load_EC_annot(filename):
+    """
+    Loads the EC annotations.
+
+    Args:
+        filename: String representing the path to the EC annotations file.
+    Returns
+        Quatruple where elements are
+            1/ a dict of dict with protein annotations: {protein: {'ec': np.array([...])}}
+            2/ a dict with metadata of EC numbers: {'ec': [ecnumber1, ...]}
+            4/ a dict with protein counts of EC numbers: {'ec': np.array(...)}
+    """
+    # Load EC annotations
+    ecs = ["ec"]
+    prot2annot = {}
+    ecnumbers = {ec: [] for ec in ecs}
+    with open(filename, mode="r") as tsvfile:
+        reader = csv.reader(tsvfile, delimiter="\t")
+
+        # EC numbers
+        next(reader, None)  # skip the headers
+        ecnumbers[ecs[0]] = next(reader)
+
+        next(reader, None)  # skip the headers
+        counts = {
+            ec: np.zeros(len(ecnumbers[ec]), dtype=float) for ec in ecs
+        }
+        for row in reader:
+            prot, prot_ecnumbers = row[0], row[1]
+            prot2annot[prot] = {ec: [] for ec in ecs}
+            ecnum_indices = [
+                ecnumbers[ecs[0]].index(ecnum)
+                for ecnum in prot_ecnumbers.split(",")
+                if ecnum != ""
+            ]
+            prot2annot[prot][ecs[0]] = np.zeros(len(ecnumbers[ecs[0]]))
+            prot2annot[prot][ecs[0]][ecnum_indices] = 1.0
+            counts[ecs[0]][ecnum_indices] += 1.0
+    return prot2annot, ecnumbers, counts
+
+
 def norm_adj(A, symm=True):
     """
     Normalize adj matrix
