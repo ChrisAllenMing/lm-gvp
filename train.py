@@ -149,7 +149,7 @@ def evaluate(model, data_loader, task):
     if task in ("cc", "bp", "mf", "ec"):
         # multi-label classification
         f_max, micro_aupr = deepfrier_utils.evaluate_multilabel(
-            y_true.numpy(), y_preds.numpy()
+            y_true, y_preds
         )
         scores = {"f_max": f_max, "aupr": micro_aupr}
         print("F_max = {:1.3f}".format(scores["f_max"]))
