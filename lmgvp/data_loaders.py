@@ -169,7 +169,7 @@ def get_dataset(task="", model_type="", split="train"):
     """Load data from files, then transform into appropriate
     Dataset objects.
     Args:
-        task: one of ['cc', 'bp', 'mf', 'protease', 'flu', 'ec']
+        task: one of ['cc', 'bp', 'mf', 'protease', 'flu', 'ec', 'fold']
         model_type: one of ['seq', 'struct', 'seq_struct']
         split: one of ['train', 'valid', 'test']
 
@@ -203,6 +203,12 @@ def get_dataset(task="", model_type="", split="train"):
             task="EnzymeCommission", split=split, seq_only=seq_only
         )
         add_EC_labels(dataset, prot2annot, ecname=task)
+    elif task == "fold":
+        dataset = load_gvp_data(
+            task="Fold", split=split, seq_only=seq_only
+        )
+        num_outputs = 1195
+        pos_weights = None
     else:
         data_dir = {"protease": "protease/with_tags", "flu": "Fluorescence"}
         dataset = load_gvp_data(
@@ -217,6 +223,10 @@ def get_dataset(task="", model_type="", split="train"):
             targets = torch.tensor(
                 [obj["target"] for obj in dataset], dtype=torch.float32
             ).unsqueeze(-1)
+        elif num_outputs == 1195:
+            targets = torch.tensor(
+                [obj["target"] for obj in dataset], dtype=torch.long
+            )
         else:
             targets = [obj["target"] for obj in dataset]
         dataset = SequenceDatasetWithTarget(
@@ -232,6 +242,11 @@ def get_dataset(task="", model_type="", split="train"):
                 obj["target"] = torch.tensor(
                     obj["target"], dtype=torch.float32
                 ).unsqueeze(-1)
+        elif num_outputs == 1195:
+            for obj in dataset:
+                obj["target"] = torch.tensor(
+                    obj["target"], dtype=torch.long
+                )
         if model_type == "struct":
             dataset = ProteinGraphDatasetWithTarget(dataset, preprocess=False)
         elif model_type == "seq_struct":

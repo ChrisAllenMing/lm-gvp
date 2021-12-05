@@ -15,7 +15,7 @@ from Bio.PDB.Polypeptide import three_to_one
 from contact_map_utils import parse_pdb_structure
 
 # raw_path = './fold_classification/'
-raw_path = './Fold/'
+raw_path = './dataset/Fold/'
 
 # Get the label mapping
 class_map_name = os.path.join(raw_path, "class_map.txt")
@@ -61,7 +61,10 @@ def get_seq(residue_names, residue_ids):
     seq_list = []
     for residue_name, residue_id in zip(residue_names, residue_ids):
         if residue_id > curr_id:
-            seq_list.append(three_to_one(residue_name.decode('ascii')))
+            try:
+                seq_list.append(three_to_one(residue_name.decode('ascii')))
+            except:
+                seq_list.append('X')
             curr_id = residue_id
     seq = "".join(seq_list)
 
@@ -78,14 +81,16 @@ def get_coords(residue_ids, atom_names, atom_coords, target_atoms=["N", "CA", "C
         coords_dict[curr_id][atom_name.decode('ascii')] = atom_coord
 
     all_coords = np.zeros((len(coords_dict), len(target_atoms), 3))
-    for res_idx in range(len(coords_dict)):
-        res_coords_dict = coords_dict[res_idx]
+    res_indices = list(coords_dict.keys())
+    res_indices.sort()
+    for i, res_index in enumerate(res_indices):
+        res_coords_dict = coords_dict[res_index]
         for atom_idx, tgt_atom in enumerate(target_atoms):
             try:
                 tgt_atom_coord = res_coords_dict[tgt_atom]
             except:
                 tgt_atom_coord = np.asarray([np.nan] * 3)
-            all_coords[res_idx, atom_idx] = tgt_atom_coord
+            all_coords[i, atom_idx] = tgt_atom_coord
 
     return all_coords
 

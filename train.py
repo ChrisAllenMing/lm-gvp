@@ -59,6 +59,17 @@ IS_CLASSIFY = {
     "mf": True,
     "bp": True,
     "ec": True,
+    "fold": True,
+}
+
+MULTI_CLASS = {
+    "flu": False,
+    "protease": False,
+    "cc": False,
+    "mf": False,
+    "bp": False,
+    "ec": False,
+    "fold": True,
 }
 
 
@@ -67,6 +78,7 @@ def init_model(
     model_name="gvp",
     num_outputs=1,
     classify=False,
+    multiclass=False,
     weights=None,
     **kwargs
 ):
@@ -89,6 +101,7 @@ def init_model(
             num_outputs=num_outputs,
             weights=weights,
             classify=classify,
+            multiclass=multiclass,
             **kwargs
         )
     elif model_name in ("gvp", "bert_gvp"):
@@ -108,6 +121,7 @@ def init_model(
             weights=weights,
             num_outputs=num_outputs,
             classify=classify,
+            multiclass=multiclass,
             **kwargs
         )
     return model
@@ -154,6 +168,11 @@ def evaluate(model, data_loader, task):
         scores = {"f_max": f_max, "aupr": micro_aupr}
         print("F_max = {:1.3f}".format(scores["f_max"]))
         print("AUPR = {:1.3f}".format(scores["aupr"]))
+    elif task == 'fold':
+        # multi-class classification
+        acc = np.float32(np.argmax(y_preds, axis=-1) == y_true).mean()
+        scores = {"acc": acc}
+        print("Acc = {:1.4f}".format(scores["acc"]))
     else:
         # single task regression
         mse = metrics.mean_squared_error(y_true, y_preds)
@@ -214,6 +233,7 @@ def main(args):
         num_outputs=train_dataset.num_outputs,
         weights=train_dataset.pos_weights,
         classify=IS_CLASSIFY[args.task],
+        multiclass=MULTI_CLASS[args.task],
         **dict_args
     )
     if args.pretrained_weights:
@@ -249,22 +269,41 @@ def main(args):
         weights=train_dataset.pos_weights,
     )
     print("Testing performance on test set")
-    # load test data
-    test_dataset = data_loaders.get_dataset(
-        args.task, MODEL_TYPES[args.model_name], split="test"
-    )
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=args.bs,
-        shuffle=False,
-        num_workers=args.num_workers,
-    )
-    scores = evaluate(model, test_loader, args.task)
-    # save scores to file
-    json.dump(
-        scores,
-        open(os.path.join(trainer.log_dir, "scores.json"), "w"),
-    )
+    # test on three different splits for fold classification
+    if args.task == 'fold':
+        for split in ["test_fold", "test_family", "test_superfamily"]:
+            print("Evaluate on split: ", split)
+            test_dataset = data_loaders.get_dataset(
+                args.task, MODEL_TYPES[args.model_name], split=split
+            )
+            test_loader = DataLoader(
+                test_dataset,
+                batch_size=args.bs,
+                shuffle=False,
+                num_workers=args.num_workers,
+            )
+            scores = evaluate(model, test_loader, args.task)
+            # save scores to file
+            json.dump(
+                scores,
+                open(os.path.join(trainer.log_dir, "scores_{}.json".format(split)), "w"),
+            )
+    else:
+        test_dataset = data_loaders.get_dataset(
+            args.task, MODEL_TYPES[args.model_name], split="test"
+        )
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=args.bs,
+            shuffle=False,
+            num_workers=args.num_workers,
+        )
+        scores = evaluate(model, test_loader, args.task)
+        # save scores to file
+        json.dump(
+            scores,
+            open(os.path.join(trainer.log_dir, "scores.json"), "w"),
+        )
     return None
 
 
@@ -290,7 +329,7 @@ if __name__ == "__main__":
     # dataset params
     parser.add_argument(
         "--task",
-        help="Task to perform: ['flu', 'protease', 'cc', 'bp', 'mf', 'ec']",
+        help="Task to perform: ['flu', 'protease', 'fold', 'cc', 'bp', 'mf', 'ec']",
         type=str,
         required=True,
     )
