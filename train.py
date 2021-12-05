@@ -60,6 +60,7 @@ IS_CLASSIFY = {
     "bp": True,
     "ec": True,
     "fold": True,
+    "reaction": True,
 }
 
 MULTI_CLASS = {
@@ -70,6 +71,7 @@ MULTI_CLASS = {
     "bp": False,
     "ec": False,
     "fold": True,
+    "reaction": True,
 }
 
 
@@ -157,8 +159,12 @@ def evaluate(model, data_loader, task):
             if y_pred.ndim == 1:
                 y_pred = y_pred.unsqueeze(1)
             y_preds.append(y_pred.cpu())
-    y_preds = torch.vstack(y_preds).numpy()
-    y_true = torch.vstack(y_true).numpy()
+    if task in ["fold", "reaction"]:
+        y_preds = torch.cat(y_preds, dim=0)
+        y_true = torch.cat(y_true, dim=0)
+    else:
+        y_preds = torch.vstack(y_preds).numpy()
+        y_true = torch.vstack(y_true).numpy()
     print(y_preds.shape, y_true.shape)
     if task in ("cc", "bp", "mf", "ec"):
         # multi-label classification
@@ -168,10 +174,10 @@ def evaluate(model, data_loader, task):
         scores = {"f_max": f_max, "aupr": micro_aupr}
         print("F_max = {:1.3f}".format(scores["f_max"]))
         print("AUPR = {:1.3f}".format(scores["aupr"]))
-    elif task == 'fold':
+    elif task in ["fold", "reaction"]:
         # multi-class classification
         acc = np.float32(np.argmax(y_preds, axis=-1) == y_true).mean()
-        scores = {"acc": acc}
+        scores = {"acc": float(acc)}
         print("Acc = {:1.4f}".format(scores["acc"]))
     else:
         # single task regression
@@ -329,7 +335,7 @@ if __name__ == "__main__":
     # dataset params
     parser.add_argument(
         "--task",
-        help="Task to perform: ['flu', 'protease', 'fold', 'cc', 'bp', 'mf', 'ec']",
+        help="Task to perform: ['flu', 'protease', 'fold', 'reaction', 'cc', 'bp', 'mf', 'ec']",
         type=str,
         required=True,
     )

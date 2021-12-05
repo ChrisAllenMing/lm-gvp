@@ -169,7 +169,7 @@ def get_dataset(task="", model_type="", split="train"):
     """Load data from files, then transform into appropriate
     Dataset objects.
     Args:
-        task: one of ['cc', 'bp', 'mf', 'protease', 'flu', 'ec', 'fold']
+        task: one of ['cc', 'bp', 'mf', 'protease', 'flu', 'ec', 'fold', 'reaction']
         model_type: one of ['seq', 'struct', 'seq_struct']
         split: one of ['train', 'valid', 'test']
 
@@ -208,6 +208,12 @@ def get_dataset(task="", model_type="", split="train"):
             task="Fold", split=split, seq_only=seq_only
         )
         num_outputs = 1195
+        pos_weights = None
+    elif task == "reaction":
+        dataset = load_gvp_data(
+            task="Reaction", split=split, seq_only=seq_only
+        )
+        num_outputs = 384
         pos_weights = None
     else:
         data_dir = {"protease": "protease/with_tags", "flu": "Fluorescence"}
